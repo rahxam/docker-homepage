@@ -1,0 +1,31 @@
+services:
+  homepage:
+    networks:
+      - traefik
+    image: ghcr.io/gethomepage/homepage:latest
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: home.hartig.es # required, may need port
+      PUID: 1000 # optional, your user id
+      PGID: 1000 # optional, your group id
+    volumes:
+      - ./config/:/app/config # Make sure your local config directory exists
+      - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.stack.network=traefik"  
+
+        - "traefik.http.routers.home.rule=Host(`home.hartig.es`)"
+        - "traefik.http.routers.home.entrypoints=https"
+        - "traefik.http.routers.home.tls=true"
+
+        - "traefik.http.services.home.loadbalancer.server.port=3000"
+
+        - "traefik.constraint=proxy-public"
+
+        - "traefik.http.routers.home.middlewares=authentik@swarm"
+
+networks:
+  traefik:
+    external: true
